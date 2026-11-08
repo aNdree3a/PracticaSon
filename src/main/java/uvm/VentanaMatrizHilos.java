@@ -5,13 +5,14 @@ import java.awt.*;
 
 public class VentanaMatrizHilos extends JFrame {
 
-    HiloCazador hcaz;
-    HiloClima hcli;
-    HiloLimpiador hlim;
-    HiloRebotador hreb;
-    HiloSerpiente hser;
+    private static final long serialVersionUID = 1L;
 
-    private JLabel[][] matriz = new JLabel[15][15];
+    private final JLabel[][] matriz = new JLabel[15][15];
+
+    private HiloSerpiente serpiente;
+    private HiloCazador cazador;
+    private HiloRebotador rebotador;
+    private HiloLimpiador limpiador;
 
     private JButton btIniciarS;
     private JButton btPausaS;
@@ -25,10 +26,6 @@ public class VentanaMatrizHilos extends JFrame {
     private JButton btPausaR;
     private JButton btTerminarR;
 
-    private JButton btIniciarCl;
-    private JButton btPausaCl;
-    private JButton btTerminarCl;
-
     private JButton btIniciarL;
     private JButton btPausaL;
     private JButton btTerminarL;
@@ -39,7 +36,7 @@ public class VentanaMatrizHilos extends JFrame {
         inicializarGUI();
         asociarEventos();
 
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         pack();
         setLocationRelativeTo(null);
         setMinimumSize(new Dimension(850, 650));
@@ -48,7 +45,13 @@ public class VentanaMatrizHilos extends JFrame {
     private void inicializarGUI() {
         setLayout(new BorderLayout(5, 5));
 
-        // MATRIZ 15 x 15
+        crearMatriz();
+        crearPanelNorte();
+        crearPanelSur();
+        crearPanelOeste();
+    }
+
+    private void crearMatriz() {
         JPanel panelMatriz = new JPanel(
                 new GridLayout(15, 15, 1, 1));
 
@@ -56,210 +59,233 @@ public class VentanaMatrizHilos extends JFrame {
                 BorderFactory.createTitledBorder(
                         "Matriz Compartida (15x15)"));
 
-        for (int fila = 0; fila < 15; fila++) {
-            for (int col = 0; col < 15; col++) {
+        for (int fila = 0; fila < matriz.length; fila++) {
+            for (int columna = 0; columna < matriz[fila].length; columna++) {
 
-                JLabel lbl = new JLabel("-", SwingConstants.CENTER);
+                JLabel etiqueta = new JLabel("-", SwingConstants.CENTER);
 
-                lbl.setOpaque(true);
-                lbl.setBackground(Color.WHITE);
+                etiqueta.setOpaque(true);
+                etiqueta.setBackground(Color.WHITE);
+                etiqueta.setForeground(Color.BLACK);
 
-                lbl.setBorder(
-                        BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+                etiqueta.setBorder(
+                        BorderFactory.createLineBorder(
+                                Color.LIGHT_GRAY));
 
-                // Fuente más pequeña para mostrar números de 3 cifras
-                lbl.setFont(new Font("Monospaced", Font.BOLD, 10));
+                etiqueta.setFont(
+                        new Font("Monospaced", Font.BOLD, 10));
 
-                matriz[fila][col] = lbl;
-                panelMatriz.add(lbl);
+                matriz[fila][columna] = etiqueta;
+                panelMatriz.add(etiqueta);
             }
         }
 
         add(panelMatriz, BorderLayout.CENTER);
+    }
 
-        // NORTE: SERPIENTE Y CAZADOR
+    private void crearPanelNorte() {
         JPanel panelNorte = new JPanel(
                 new GridLayout(1, 2, 5, 5));
 
-        JPanel panelSerpiente = new JPanel(new FlowLayout());
-        panelSerpiente.setBorder(
-                BorderFactory.createTitledBorder("Hilo Serpiente"));
+        JPanel panelSerpiente = crearPanelHilo("Hilo Serpiente");
 
-        btIniciarS = new JButton("Iniciar");
-        btPausaS = new JButton("Pausa");
-        btTerminarS = new JButton("Terminar");
+        btIniciarS = crearBoton(panelSerpiente, "Iniciar");
+        btPausaS = crearBoton(panelSerpiente, "Pausa");
+        btTerminarS = crearBoton(panelSerpiente, "Terminar");
 
-        panelSerpiente.add(btIniciarS);
-        panelSerpiente.add(btPausaS);
-        panelSerpiente.add(btTerminarS);
+        JPanel panelCazador = crearPanelHilo("Hilo Cazador");
 
-        JPanel panelCazador = new JPanel(new FlowLayout());
-        panelCazador.setBorder(
-                BorderFactory.createTitledBorder("Hilo Cazador"));
-
-        btIniciarC = new JButton("Iniciar");
-        btPausaC = new JButton("Pausa");
-        btTerminarC = new JButton("Terminar");
-
-        panelCazador.add(btIniciarC);
-        panelCazador.add(btPausaC);
-        panelCazador.add(btTerminarC);
+        btIniciarC = crearBoton(panelCazador, "Iniciar");
+        btPausaC = crearBoton(panelCazador, "Pausa");
+        btTerminarC = crearBoton(panelCazador, "Terminar");
 
         panelNorte.add(panelSerpiente);
         panelNorte.add(panelCazador);
 
         add(panelNorte, BorderLayout.NORTH);
+    }
 
-        // SUR: REBOTADOR Y CLIMA
+    private void crearPanelSur() {
         JPanel panelSur = new JPanel(
-                new GridLayout(1, 2, 5, 5));
+                new GridLayout(1, 1, 5, 5));
 
-        JPanel panelRebotador = new JPanel(new FlowLayout());
-        panelRebotador.setBorder(
-                BorderFactory.createTitledBorder("Hilo Rebotador"));
+        JPanel panelRebotador = crearPanelHilo("Hilo Rebotador");
 
-        btIniciarR = new JButton("Iniciar");
-        btPausaR = new JButton("Pausa");
-        btTerminarR = new JButton("Terminar");
-
-        panelRebotador.add(btIniciarR);
-        panelRebotador.add(btPausaR);
-        panelRebotador.add(btTerminarR);
-
-        JPanel panelClima = new JPanel(new FlowLayout());
-        panelClima.setBorder(
-                BorderFactory.createTitledBorder("Hilo Clima"));
-
-        btIniciarCl = new JButton("Iniciar");
-        btPausaCl = new JButton("Pausa");
-        btTerminarCl = new JButton("Terminar");
-
-        panelClima.add(btIniciarCl);
-        panelClima.add(btPausaCl);
-        panelClima.add(btTerminarCl);
+        btIniciarR = crearBoton(panelRebotador, "Iniciar");
+        btPausaR = crearBoton(panelRebotador, "Pausa");
+        btTerminarR = crearBoton(panelRebotador, "Terminar");
 
         panelSur.add(panelRebotador);
-        panelSur.add(panelClima);
 
         add(panelSur, BorderLayout.SOUTH);
+    }
 
-        // OESTE: LIMPIADOR
+    private void crearPanelOeste() {
         JPanel panelLimpiador = new JPanel(
                 new GridLayout(3, 1, 5, 5));
 
         panelLimpiador.setBorder(
-                BorderFactory.createTitledBorder("Limpiador"));
+                BorderFactory.createTitledBorder(
+                        "Hilo Limpiador"));
 
-        btIniciarL = new JButton("Iniciar");
-        btPausaL = new JButton("Pausa");
-        btTerminarL = new JButton("Terminar");
+        btIniciarL = crearBoton(panelLimpiador, "Iniciar");
+        btPausaL = crearBoton(panelLimpiador, "Pausa");
+        btTerminarL = crearBoton(panelLimpiador, "Terminar");
 
-        panelLimpiador.add(btIniciarL);
-        panelLimpiador.add(btPausaL);
-        panelLimpiador.add(btTerminarL);
-
-        JPanel panelWestContenedor = new JPanel(
+        JPanel contenedor = new JPanel(
                 new FlowLayout(FlowLayout.CENTER));
 
-        panelWestContenedor.add(panelLimpiador);
+        contenedor.add(panelLimpiador);
 
-        add(panelWestContenedor, BorderLayout.WEST);
+        add(contenedor, BorderLayout.WEST);
+    }
+
+    private JPanel crearPanelHilo(String titulo) {
+        JPanel panel = new JPanel(new FlowLayout());
+        panel.setBorder(
+                BorderFactory.createTitledBorder(titulo));
+        return panel;
+    }
+
+    private JButton crearBoton(JPanel panel, String texto) {
+        JButton boton = new JButton(texto);
+        panel.add(boton);
+        return boton;
     }
 
     private void asociarEventos() {
-
-        // SERPIENTE
         btIniciarS.addActionListener(e -> iniciarSerpiente());
         btPausaS.addActionListener(e -> pausarSerpiente());
         btTerminarS.addActionListener(e -> terminarSerpiente());
 
-        // CAZADOR
         btIniciarC.addActionListener(e -> iniciarCazador());
         btPausaC.addActionListener(e -> pausarCazador());
         btTerminarC.addActionListener(e -> terminarCazador());
 
-        // REBOTADOR
         btIniciarR.addActionListener(e -> iniciarRebotador());
         btPausaR.addActionListener(e -> pausarRebotador());
         btTerminarR.addActionListener(e -> terminarRebotador());
 
-        // CLIMA
-        btIniciarCl.addActionListener(e -> iniciarClima());
-        btPausaCl.addActionListener(e -> pausarClima());
-        btTerminarCl.addActionListener(e -> terminarClima());
-
-        // LIMPIADOR
         btIniciarL.addActionListener(e -> iniciarLimpiador());
         btPausaL.addActionListener(e -> pausarLimpiador());
         btTerminarL.addActionListener(e -> terminarLimpiador());
     }
 
-    // EVENTOS SERPIENTE
+    // HILO SERPIENTE
+
     private void iniciarSerpiente() {
-        System.out.println("Evento: Iniciar Serpiente");
+        if (serpiente != null && serpiente.isAlive()) {
+            serpiente.continuar();
+            return;
+        }
+
+        limpiarMatriz();
+
+        serpiente = new HiloSerpiente(matriz);
+        serpiente.start();
     }
 
     private void pausarSerpiente() {
-        System.out.println("Evento: Pausar Serpiente");
+        if (serpiente != null && serpiente.isAlive()) {
+            serpiente.pausar();
+        }
     }
 
     private void terminarSerpiente() {
-        System.out.println("Evento: Terminar Serpiente");
+        if (serpiente != null) {
+            serpiente.terminar();
+            serpiente = null;
+        }
     }
 
-    // EVENTOS CAZADOR
+    // HILO CAZADOR
+
     private void iniciarCazador() {
-        System.out.println("Evento: Iniciar Cazador");
+        if (cazador != null && cazador.isAlive()) {
+            cazador.reanudar();
+            return;
+        }
+
+        cazador = new HiloCazador(matriz);
+        cazador.start();
     }
 
     private void pausarCazador() {
-        System.out.println("Evento: Pausar Cazador");
+        if (cazador != null && cazador.isAlive()) {
+            cazador.pausar();
+        }
     }
 
     private void terminarCazador() {
-        System.out.println("Evento: Terminar Cazador");
+        if (cazador != null) {
+            cazador.terminar();
+            cazador = null;
+        }
     }
 
-    // EVENTOS REBOTADOR
+    // HILO REBOTADOR
+
     private void iniciarRebotador() {
-        System.out.println("Evento: Iniciar Rebotador");
+        if (rebotador != null && rebotador.isAlive()) {
+            rebotador.continuar();
+            return;
+        }
+
+        rebotador = new HiloRebotador(matriz);
+        rebotador.start();
     }
 
     private void pausarRebotador() {
-        System.out.println("Evento: Pausar Rebotador");
+        if (rebotador != null && rebotador.isAlive()) {
+            rebotador.pausar();
+        }
     }
 
     private void terminarRebotador() {
-        System.out.println("Evento: Terminar Rebotador");
+        if (rebotador != null) {
+            rebotador.terminar();
+            rebotador = null;
+        }
     }
 
-    // EVENTOS CLIMA
-    private void iniciarClima() {
-        System.out.println("Evento: Iniciar Clima");
-    }
+    // HILO LIMPIADOR
 
-    private void pausarClima() {
-        System.out.println("Evento: Pausar Clima");
-    }
-
-    private void terminarClima() {
-        System.out.println("Evento: Terminar Clima");
-    }
-
-    // EVENTOS LIMPIADOR
     private void iniciarLimpiador() {
-        System.out.println("Evento: Iniciar Limpiador");
+        if (limpiador != null && limpiador.isAlive()) {
+            limpiador.continuar();
+            return;
+        }
+
+        limpiador = new HiloLimpiador(matriz);
+        limpiador.start();
     }
 
     private void pausarLimpiador() {
-        System.out.println("Evento: Pausar Limpiador");
+        if (limpiador != null && limpiador.isAlive()) {
+            limpiador.pausar();
+        }
     }
 
     private void terminarLimpiador() {
-        System.out.println("Evento: Terminar Limpiador");
+        if (limpiador != null) {
+            limpiador.terminar();
+            limpiador = null;
+        }
     }
 
-    // ACCESO A LA MATRIZ
+    // LIMPIAR MATRIZ
+
+    private void limpiarMatriz() {
+        for (JLabel[] fila : matriz) {
+            for (JLabel celda : fila) {
+                celda.setText("-");
+                celda.setForeground(Color.BLACK);
+                celda.setBackground(Color.WHITE);
+                celda.setVisible(true);
+            }
+        }
+    }
+
     public JLabel[][] getMatrizLabels() {
         return matriz;
     }
